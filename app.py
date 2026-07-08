@@ -112,21 +112,31 @@ CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
 
 :root {
+  color-scheme:light;
   --paper:#FBFAF6; --panel:#FFFFFF; --ink:#1A1917; --muted:#77736A; --line:#E7E3D9;
+  --input-bg:#FCFBF9; --meter-bg:#EEEBE3;
   --pos:#14794E; --pos-soft:#E9F3ED; --neg:#C23A2B; --neg-soft:#FAEBE7;
+  --clash-bg:#FBF3E4; --clash-fg:#8A5B12; --clash-dot:#C8891F;
   --grotesk:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'Space Mono',monospace;
+}
+html.t-dark {
+  color-scheme:dark;
+  --paper:#100F0D; --panel:#1A1815; --ink:#F1EDE4; --muted:#9C978D; --line:#2E2B25;
+  --input-bg:#141310; --meter-bg:#2B2823;
+  --pos:#43BE89; --pos-soft:#132A1F; --neg:#E86B5D; --neg-soft:#2C1613;
+  --clash-bg:#241B0B; --clash-fg:#E7B65E; --clash-dot:#D69A3A;
 }
 html, body, gradio-app { background:var(--paper) !important; margin:0 !important; }
 .gradio-container, .gradio-container.dark {
   max-width:100% !important; width:100% !important; margin:0 !important;
-  padding:0 clamp(24px, 5vw, 96px) !important; color-scheme:light;
+  padding:0 clamp(24px, 5vw, 96px) !important;
   background:var(--paper) !important; color:var(--ink) !important; font-family:var(--body) !important;
   /* Gradio tema degiskenlerini aydinliga zorla (dark modu ez) */
   --body-background-fill:var(--paper); --background-fill-primary:var(--paper);
   --background-fill-secondary:var(--paper); --block-background-fill:var(--panel);
   --block-label-background-fill:var(--panel); --block-border-color:var(--line);
   --border-color-primary:var(--line); --border-color-accent:var(--line);
-  --input-background-fill:#FCFBF9; --input-background-fill-focus:#FCFBF9;
+  --input-background-fill:var(--input-bg); --input-background-fill-focus:var(--input-bg);
   --input-border-color:var(--line); --input-border-color-focus:var(--ink);
   --button-secondary-background-fill:transparent; --button-secondary-background-fill-hover:transparent;
   --button-secondary-text-color:var(--muted); --button-secondary-border-color:var(--line);
@@ -150,10 +160,10 @@ footer { display:none !important; }
   border-radius:14px !important; padding:20px !important; }
 label span { color:var(--muted) !important; font-family:var(--mono) !important; font-size:12px !important;
   letter-spacing:.06em !important; text-transform:uppercase !important; font-weight:400 !important; }
-textarea { background:#FCFBF9 !important; color:var(--ink) !important; border:1px solid var(--line) !important;
+textarea { background:var(--input-bg) !important; color:var(--ink) !important; border:1px solid var(--line) !important;
   border-radius:10px !important; font-size:16px !important; font-family:var(--body) !important; padding:14px !important; }
 textarea:focus { border-color:var(--ink) !important; box-shadow:none !important; }
-#go { background:var(--ink) !important; color:#FBFAF6 !important; border:none !important; border-radius:10px !important;
+#go { background:var(--ink) !important; color:var(--paper) !important; border:none !important; border-radius:10px !important;
   font-family:var(--grotesk) !important; font-weight:600 !important; font-size:15px !important; padding:12px 22px !important;
   transition:opacity .15s ease; }
 #go:hover { opacity:.86; }
@@ -166,8 +176,8 @@ textarea:focus { border-color:var(--ink) !important; box-shadow:none !important;
 .verdictbar::before { content:""; width:9px; height:9px; border-radius:50%; }
 .verdictbar.agree { background:var(--pos-soft); color:var(--pos); }
 .verdictbar.agree::before { background:var(--pos); }
-.verdictbar.clash { background:#FBF3E4; color:#8A5B12; }
-.verdictbar.clash::before { background:#C8891F; }
+.verdictbar.clash { background:var(--clash-bg); color:var(--clash-fg); }
+.verdictbar.clash::before { background:var(--clash-dot); }
 
 /* Verdict cards */
 .verdict { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 26px 24px; height:100%; }
@@ -181,7 +191,7 @@ textarea:focus { border-color:var(--ink) !important; box-shadow:none !important;
 .verdict.pos .mark { color:var(--pos); background:var(--pos-soft); }
 .verdict.neg .mark { color:var(--neg); background:var(--neg-soft); }
 .verdict .mark.idle { color:var(--line); transform:none; }
-.verdict .meter { height:6px; background:#EEEBE3; border-radius:99px; margin:22px 0 12px; overflow:hidden; }
+.verdict .meter { height:6px; background:var(--meter-bg); border-radius:99px; margin:22px 0 12px; overflow:hidden; }
 .verdict .meter i { display:block; height:100%; border-radius:99px; transition:width .8s cubic-bezier(.22,1,.36,1); }
 .verdict.pos .meter i { background:var(--pos); }
 .verdict.neg .meter i { background:var(--neg); }
@@ -201,6 +211,13 @@ textarea:focus { border-color:var(--ink) !important; box-shadow:none !important;
 #foot a { color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line); }
 #foot a:hover { border-color:var(--ink); }
 #foot b { color:var(--ink); }
+
+/* Tema geçiş butonu (saf HTML + onclick) */
+#toggle-wrap { height:0 !important; min-height:0 !important; padding:0 !important; margin:0 !important; overflow:visible !important; }
+#theme-toggle-btn { position:fixed; top:18px; right:22px; z-index:100; cursor:pointer;
+  background:var(--panel); border:1px solid var(--line); color:var(--muted);
+  border-radius:99px; font-family:var(--mono); font-size:12px; letter-spacing:.04em; padding:9px 15px; }
+#theme-toggle-btn:hover { color:var(--ink); border-color:var(--ink); }
 
 @keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 @media (prefers-reduced-motion: reduce) { .verdict .meter i, .verdictbar { transition:none; animation:none; } }
@@ -229,7 +246,10 @@ FOOT = f"""
 
 theme = gr.themes.Base(primary_hue="gray", neutral_hue="gray")
 
+THEME_TOGGLE = '''<button id="theme-toggle-btn" onclick="const d=document.documentElement.classList.toggle('t-dark'); this.textContent = d ? '☀ Aydınlık' : '☾ Karanlık';">☾ Karanlık</button>'''
+
 with gr.Blocks(css=CSS, theme=theme, fill_width=True, title="Türkçe Duygu Analizi") as demo:
+    gr.HTML(THEME_TOGGLE, elem_id="toggle-wrap")
     gr.HTML(HERO)
 
     with gr.Row(equal_height=False, elem_id="workspace"):
