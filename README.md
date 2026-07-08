@@ -55,13 +55,24 @@ src/
   data_loader.py   # HF'ten indir, önbelleğe al, DataFrame döndür
   explore.py       # EDA: dağılım, uzunluk, tekrar/null, örnekler, grafikler
   baseline.py      # TF-IDF + Lojistik Regresyon baseline
+notebooks/
+  berturk_finetuning.ipynb  # Hafta 2: BERTurk fine-tuning (Colab GPU)
 data/              # indirilen veri önbelleği (gitignore)
 models/            # eğitilmiş modeller (gitignore)
 outputs/           # üretilen grafik ve raporlar (gitignore)
 ```
 
+## Hafta 2: BERTurk Fine-tuning (Colab)
+[`notebooks/berturk_finetuning.ipynb`](notebooks/berturk_finetuning.ipynb) —
+Colab'da GPU ile `dbmdz/bert-base-turkish-cased` fine-tune eder. Notebook repoyu
+klonlayıp **baseline ile birebir aynı** veriyi ve stratified bölmeyi kullanır,
+sonunda macro-F1 üzerinden baseline (0.738) ile karşılaştırır.
+
+**Çalıştırma:** Colab'da aç → Runtime → GPU → Run all. Hızlı deneme için
+notebook'taki `MAX_TRAIN_SAMPLES` ayarını kullan.
+
 ## Durum
 - [x] **Hafta 1:** proje iskeleti + veri yükleme + keşif (EDA)
 - [x] **Hafta 1:** TF-IDF + Lojistik Regresyon baseline
-- [ ] Hafta 2: BERTurk fine-tuning (Colab GPU)
+- [x] **Hafta 2:** BERTurk fine-tuning notebook'u (Colab'da çalıştırılmayı bekliyor)
 - [ ] Hafta 3: değerlendirme + hata analizi + demo
