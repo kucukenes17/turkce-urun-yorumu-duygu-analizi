@@ -116,9 +116,10 @@ CSS = """
   --pos:#14794E; --pos-soft:#E9F3ED; --neg:#C23A2B; --neg-soft:#FAEBE7;
   --grotesk:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'Space Mono',monospace;
 }
+html, body, gradio-app { background:var(--paper) !important; margin:0 !important; }
 .gradio-container, .gradio-container.dark {
-  max-width:1400px !important; width:100% !important; margin:0 auto !important;
-  padding:0 40px !important; color-scheme:light;
+  max-width:100% !important; width:100% !important; margin:0 !important;
+  padding:0 clamp(24px, 5vw, 96px) !important; color-scheme:light;
   background:var(--paper) !important; color:var(--ink) !important; font-family:var(--body) !important;
   /* Gradio tema degiskenlerini aydinliga zorla (dark modu ez) */
   --body-background-fill:var(--paper); --background-fill-primary:var(--paper);
@@ -228,7 +229,7 @@ FOOT = f"""
 
 theme = gr.themes.Base(primary_hue="gray", neutral_hue="gray")
 
-with gr.Blocks(css=CSS, theme=theme, title="Türkçe Duygu Analizi") as demo:
+with gr.Blocks(css=CSS, theme=theme, fill_width=True, title="Türkçe Duygu Analizi") as demo:
     gr.HTML(HERO)
 
     with gr.Row(equal_height=False, elem_id="workspace"):
