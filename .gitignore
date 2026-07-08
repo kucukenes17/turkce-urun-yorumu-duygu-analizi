@@ -31,3 +31,6 @@ models/*
 
 # Claude Code yerel ayarları
 .claude/
+
+# deploy script geçici dosyası
+_space_readme.md
