@@ -96,7 +96,7 @@ Veri: <code>fthbrmnby/turkish_product_reviews</code>
 
 theme = gr.themes.Soft(primary_hue="red", secondary_hue="slate")
 
-with gr.Blocks(theme=theme, title="Türkçe Duygu Analizi") as demo:
+with gr.Blocks(title="Türkçe Duygu Analizi") as demo:
     gr.Markdown(HEADER)
 
     with gr.Row():
@@ -120,4 +120,4 @@ with gr.Blocks(theme=theme, title="Türkçe Duygu Analizi") as demo:
     clear.add([out_berturk, out_baseline])
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=theme)
