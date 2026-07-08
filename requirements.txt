@@ -1,5 +1,4 @@
-# Hafta 1: veri yükleme + keşif (EDA) + baseline için bağımlılıklar.
-# Transformer (torch/transformers) paketleri Hafta 2'de eklenecek.
+# Projenin tüm bağımlılıkları: veri yükleme + keşif (EDA) + baseline + demo.
 datasets>=2.19
 huggingface-hub>=0.23
 pandas>=2.2
