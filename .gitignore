@@ -16,7 +16,9 @@ outputs/figures/*
 !outputs/figures/.gitkeep
 
 # Eğitilmiş modeller (yeniden üretilebilir)
-models/
+models/*
+# İstisna: baseline modeli küçük (~2 MB) ve demo (app.py) için repoda tutulur
+!models/baseline_tfidf_logreg.joblib
 
 # Hugging Face önbelleği (yerel)
 .cache/

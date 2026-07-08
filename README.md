@@ -10,6 +10,8 @@ ve dürüst hata analizi. Proje planı için bkz. [PROJECT.md](PROJECT.md).
 **Not:** veri seti ciddi dengesizdir (~%94 pozitif); ölçüt olarak accuracy yerine
 F1 + confusion matrix kullanılır.
 
+![Sınıf dağılımı](docs/images/class_distribution.png)
+
 ## Kurulum
 ```powershell
 python -m venv .venv
@@ -52,6 +54,10 @@ test kümesi (47.029 yorum) üzerinde değerlendirildi:
 (negatif) sınıfında: negatif precision 0.39 → 0.78 (yanlış alarmlar yarı yarıya
 azaldı), negatif F1 0.53 → 0.74.
 
+Baseline'ın confusion matrix'i (azınlık sınıftaki zorluğu gösterir):
+
+![Baseline confusion matrix](docs/images/baseline_confusion_matrix.png)
+
 **Neden accuracy tek başına yeterli değil?** Veri seti ~%94 pozitif; her şeye
 "pozitif" diyen naif model %93.7 accuracy alır ama negatif sınıfta işe yaramaz.
 Bu yüzden asıl ölçüt **macro-F1** ve confusion matrix.
@@ -76,12 +82,23 @@ src/
   explore.py       # EDA: dağılım, uzunluk, tekrar/null, örnekler, grafikler
   baseline.py      # TF-IDF + Lojistik Regresyon baseline
   error_analysis.py # baseline hatalarını kategorize eder + örnekler
+app.py             # Gradio demo (baseline modelle canlı tahmin)
+docs/images/       # README'de kullanılan grafikler
 notebooks/
   berturk_finetuning.ipynb  # Hafta 2: BERTurk fine-tuning (Colab GPU)
 data/              # indirilen veri önbelleği (gitignore)
 models/            # eğitilmiş modeller (gitignore)
 outputs/           # üretilen grafik ve raporlar (gitignore)
 ```
+
+## Demo (Gradio)
+Yorum yazıp anında tahmin alabileceğin bir arayüz ([`app.py`](app.py)):
+```powershell
+python app.py     # tarayıcıda http://127.0.0.1:7860 açılır
+```
+Demo hafif baseline modelini kullanır (repoda,
+`models/baseline_tfidf_logreg.joblib`). `app.py` + `requirements.txt` kök dizinde
+olduğu için Hugging Face **Spaces**'e de doğrudan yüklenebilir.
 
 ## BERTurk Fine-tuning (Colab)
 [`notebooks/berturk_finetuning.ipynb`](notebooks/berturk_finetuning.ipynb) —
@@ -105,7 +122,9 @@ notebook'taki `MAX_TRAIN_SAMPLES` ayarını kullan.
 - [x] **Hafta 2:** BERTurk fine-tuning (Colab, macro-F1 = 0.863)
 - [x] **Hafta 3:** değerlendirme + hata analizi + README
 
+- [x] **Stretch:** Gradio demo (`app.py`)
+
 ### Olası sonraki adımlar (stretch)
+- BERTurk modelini HF Hub'a yükleyip demoyu ona bağlamak (notebook'ta hazır hücreler var)
 - Aspect-based sentiment ("neyin hakkında pozitif/negatif")
-- Basit demo (Gradio) + BERTurk modelini HF Hub'a yükleme
 - Etiket gürültüsünü temizleyip yeniden değerlendirme
