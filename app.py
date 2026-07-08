@@ -1,7 +1,7 @@
 """Gradio demo — Türkçe ürün yorumu duygu sınıflandırıcı.
 
-Kaydedilmiş baseline modelini (TF-IDF + Lojistik Regresyon) yükler ve girilen
-yorumu pozitif/negatif olarak sınıflandırıp güven skorlarını gösterir.
+Fine-tune edilmiş **BERTurk** modelini (Hugging Face Hub) kullanarak girilen
+yorumu pozitif/negatif olarak sınıflandırır ve güven skorlarını gösterir.
 
 Yerel çalıştırma:
     pip install -r requirements.txt
@@ -10,32 +10,24 @@ Yerel çalıştırma:
 Hugging Face Spaces: bu dosya (app.py) + requirements.txt kök dizinde olduğu için
 Space olarak doğrudan yayınlanabilir.
 
-Not: Demo, hafif ve bağımlılıksız olması için baseline modelini kullanır.
-BERTurk (macro-F1 0.86) modelini HF Hub'a yükledikten sonra bu demo onu kullanacak
-şekilde kolayca güncellenebilir (aşağıdaki BERTURK_MODEL_ID'ye bakın).
+Not: İlk çalıştırmada model (~400 MB) Hub'dan indirilir ve önbelleğe alınır.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import gradio as gr
-from joblib import load
+from transformers import pipeline
 
-MODEL_PATH = Path(__file__).parent / "models" / "baseline_tfidf_logreg.joblib"
-LABEL_NAMES = {0: "Negatif 👎", 1: "Pozitif 👍"}
+# Fine-tune edilmiş BERTurk modeli (Hafta 2, macro-F1 = 0.863).
+MODEL_ID = "Eneskck/berturk-turkish-product-sentiment"
 
-# İleride BERTurk'ü Hub'a yükleyince buraya model kimliğini yazıp demoyu
-# transformers pipeline'ına çevirebilirsiniz.
-# BERTURK_MODEL_ID = "kullanici/berturk-turkish-sentiment"
+# Model etiketleri (id2label config'ten gelir) -> kullanıcıya gösterilen ad.
+PRETTY = {
+    "pozitif": "Pozitif 👍", "negatif": "Negatif 👎",
+    "LABEL_1": "Pozitif 👍", "LABEL_0": "Negatif 👎",
+}
 
-if not MODEL_PATH.exists():
-    raise SystemExit(
-        f"Model bulunamadı: {MODEL_PATH}\n"
-        "Önce baseline'ı eğitin: python -m src.baseline"
-    )
-
-_pipe = load(MODEL_PATH)
+_clf = pipeline("text-classification", model=MODEL_ID, top_k=None)
 
 
 def classify(review: str):
@@ -43,9 +35,8 @@ def classify(review: str):
     review = (review or "").strip()
     if not review:
         return {"Metin girin": 1.0}
-    proba = _pipe.predict_proba([review])[0]
-    classes = _pipe.classes_
-    return {LABEL_NAMES[int(c)]: float(p) for c, p in zip(classes, proba)}
+    scores = _clf(review)[0]  # top_k=None -> tüm sınıflar
+    return {PRETTY.get(s["label"], s["label"]): float(s["score"]) for s in scores}
 
 
 EXAMPLES = [
@@ -65,11 +56,11 @@ demo = gr.Interface(
     ),
     outputs=gr.Label(num_top_classes=2, label="Tahmin"),
     examples=EXAMPLES,
-    title="🇹🇷 Türkçe Ürün Yorumu Duygu Analizi",
+    title="🇹🇷 Türkçe Ürün Yorumu Duygu Analizi (BERTurk)",
     description=(
         "Bir ürün yorumunu **pozitif/negatif** sınıflandırır. "
-        "Bu demo hafif **baseline** modelini (TF-IDF + Lojistik Regresyon) kullanır. "
-        "Proje ayrıca BERTurk fine-tuning'i içerir (macro-F1 0.86). "
+        "Fine-tune edilmiş **BERTurk** modelini kullanır (macro-F1 0.86; "
+        "baseline TF-IDF + LogReg 0.74 idi). "
         "Kaynak: github.com/kucukenes17/turkce-urun-yorumu-duygu-analizi"
     ),
     flagging_mode="never",
