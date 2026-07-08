@@ -65,9 +65,11 @@ pip install -r requirements.txt
 python app.py            # tarayıcı: http://127.0.0.1:7860
 ```
 
-`app.py` + `requirements.txt` kök dizinde olduğu için Hugging Face **Spaces**'e
-doğrudan yüklenebilir. Model Hub'dan otomatik çekilir:
-[`Eneskck/berturk-turkish-product-sentiment`](https://huggingface.co/Eneskck/berturk-turkish-product-sentiment).
+Model Hub'dan otomatik çekilir:
+[`Eneskck/berturk-turkish-product-sentiment`](https://huggingface.co/Eneskck/berturk-turkish-product-sentiment)
+(profesyonel model kartı + kullanım örneği). `app.py` + `requirements.txt` kök
+dizinde olduğu için Hugging Face **Spaces**'e (PRO) veya benzeri bir servise
+olduğu gibi yüklenebilir; yerelde `python app.py` ile de çalışır.
 
 Arayüzün aydınlık ve karanlık teması var:
 
@@ -196,7 +198,8 @@ aynı** eğitim/test verisini görür → adil karşılaştırma.
 - [x] BERTurk fine-tuning (Colab, macro-F1 0.86)
 - [x] Değerlendirme + hata analizi + confusion matrix'ler
 - [x] Gradio demo (iki model karşılaştırmalı) + HF Hub'a model yükleme
-- [ ] Demoyu HF Spaces'e yayınlama (canlı link)
+- [x] Model HF Hub'da (profesyonel model kartı ile)
+- [ ] Kalıcı canlı demo (HF Spaces PRO veya ücretsiz alternatif host)
 - [ ] Aspect-based sentiment ("neyin hakkında pozitif/negatif")
 - [ ] Etiket gürültüsünü temizleyip yeniden değerlendirme
 
