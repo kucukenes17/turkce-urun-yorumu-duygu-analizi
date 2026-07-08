@@ -1,14 +1,14 @@
-"""Gradio demo — Türkçe ürün yorumu duygu sınıflandırıcı (premium arayüz).
+"""Gradio demo — Türkçe ürün yorumu duygu sınıflandırıcı.
 
-İki modeli yan yana karşılaştırır (BERTurk vs baseline), özel tasarlanmış
-modern bir arayüzle: koyu tema, gradient'ler, cam efekti kartlar, animasyonlu
-güven çubukları.
+Arayüz, Anthropic frontend-design ilkelerine göre tasarlandı: konuya demirlenmiş
+(ürün yorumu + ML kıyası), editoryal/aydınlık bir "Yorum Laboratuvarı" estetiği.
+Sinyal öğe: iki model AYRIŞINCA öne çıkan uyarı — projenin tezi budur.
+
+Tipografi: Space Grotesk (başlık), Inter (metin), Space Mono (skor/metrik).
 
 Yerel çalıştırma:
     pip install -r requirements.txt
     python app.py            # tarayıcı: http://127.0.0.1:7860
-
-Hugging Face Spaces: app.py + requirements.txt kök dizinde → doğrudan Space.
 """
 
 from __future__ import annotations
@@ -23,7 +23,6 @@ BERTURK_MODEL_ID = "Eneskck/berturk-turkish-product-sentiment"
 BASELINE_PATH = Path(__file__).parent / "models" / "baseline_tfidf_logreg.joblib"
 GITHUB_URL = "https://github.com/kucukenes17/turkce-urun-yorumu-duygu-analizi"
 
-# label -> (gösterilecek ad, "pos"/"neg")
 POL = {
     "pozitif": ("Pozitif", "pos"), "negatif": ("Negatif", "neg"),
     "LABEL_1": ("Pozitif", "pos"), "LABEL_0": ("Negatif", "neg"),
@@ -35,10 +34,9 @@ _baseline = load(BASELINE_PATH) if BASELINE_PATH.exists() else None
 
 
 def _top(scores: dict):
-    """En yüksek skoru (ad, polarite, olasılık) olarak döndür."""
     label, prob = max(scores.items(), key=lambda kv: kv[1])
     name, pol = POL.get(label, (str(label), "neg"))
-    return name, pol, prob
+    return name, pol, round(prob * 100)
 
 
 def _berturk_scores(text):
@@ -52,46 +50,55 @@ def _baseline_scores(text):
     return {int(c): float(p) for c, p in zip(_baseline.classes_, proba)}
 
 
-def _card(model_name, tag, tag_kind, scores):
-    name, pol, prob = _top(scores)
-    pct = round(prob * 100)
-    emoji = "😊" if pol == "pos" else "😞"
-    arrow = "👍" if pol == "pos" else "👎"
+def _card(model, role, f1, scores, star=False):
+    name, pol, pct = _top(scores)
+    tag = '<span class="star">★ ana model</span>' if star else ""
     return f"""
-<div class="card {pol}">
-  <div class="card-head">
-    <span class="model">{model_name}</span>
-    <span class="tag {tag_kind}">{tag}</span>
-  </div>
-  <div class="verdict">
-    <span class="emoji">{emoji}</span>
-    <span class="label">{name} {arrow}</span>
-  </div>
-  <div class="bar"><div class="fill" style="width:{pct}%"></div></div>
-  <div class="pct">%{pct} <span>güven</span></div>
-</div>"""
+<article class="verdict {pol}">
+  <header>
+    <span class="model">{model}{tag}</span>
+    <span class="role">{role}</span>
+  </header>
+  <div class="mark">{name}</div>
+  <div class="meter"><i style="width:{pct}%"></i></div>
+  <div class="score"><b>%{pct}</b> güven · macro-F1 {f1}</div>
+</article>"""
 
 
-PLACEHOLDER = """
-<div class="card empty">
-  <div class="card-head"><span class="model">{m}</span><span class="tag {k}">{t}</span></div>
-  <div class="verdict placeholder"><span class="emoji">💬</span>
-  <span class="label">Bir yorum yazın</span></div>
-  <div class="bar"><div class="fill" style="width:0%"></div></div>
-  <div class="pct">—</div>
-</div>"""
+def _placeholder(model, role, f1, star=False):
+    tag = '<span class="star">★ ana model</span>' if star else ""
+    return f"""
+<article class="verdict idle">
+  <header><span class="model">{model}{tag}</span><span class="role">{role}</span></header>
+  <div class="mark idle">—</div>
+  <div class="meter"><i style="width:0%"></i></div>
+  <div class="score">yorum bekleniyor · macro-F1 {f1}</div>
+</article>"""
 
-EMPTY_BERTURK = PLACEHOLDER.format(m="🤖 BERTurk", k="primary", t="ANA MODEL")
-EMPTY_BASELINE = PLACEHOLDER.format(m="📊 Baseline", k="muted", t="KIYAS")
+
+EMPTY_B = _placeholder("BERTurk", "fine-tune · transformer", "0.86", star=True)
+EMPTY_BASE = _placeholder("Baseline", "TF-IDF + regresyon", "0.74")
+EMPTY_BANNER = ""
+
+
+def _banner(pol_b, pol_base):
+    if pol_b == pol_base:
+        return '<div class="verdictbar agree">İki model de aynı kararda.</div>'
+    return ('<div class="verdictbar clash">Modeller ayrıştı — '
+            'olumsuzlama ve bağlamın farkı tam burada görünür.</div>')
 
 
 def analyze(text: str):
     text = (text or "").strip()
     if not text:
-        return EMPTY_BERTURK, EMPTY_BASELINE
-    b = _card("🤖 BERTurk", "ANA MODEL", "primary", _berturk_scores(text))
-    base = _card("📊 Baseline", "KIYAS", "muted", _baseline_scores(text))
-    return b, base
+        return EMPTY_BANNER, EMPTY_B, EMPTY_BASE
+    sb, sbase = _berturk_scores(text), _baseline_scores(text)
+    _, pol_b, _ = _top(sb)
+    _, pol_base, _ = _top(sbase)
+    banner = _banner(pol_b, pol_base)
+    return (banner,
+            _card("BERTurk", "fine-tune · transformer", "0.86", sb, star=True),
+            _card("Baseline", "TF-IDF + regresyon", "0.74", sbase))
 
 
 EXAMPLES = [
@@ -103,152 +110,146 @@ EXAMPLES = [
 ]
 
 CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
 :root {
-  --bg: #0b0b14; --card: rgba(255,255,255,.04); --stroke: rgba(255,255,255,.09);
-  --txt: #e9e9f2; --muted: #9a9ab0; --accent: #7c5cff; --accent2: #b06cff;
-  --pos: #22c55e; --pos2: #34d399; --neg: #ef4444; --neg2: #f87171;
+  --paper:#FBFAF6; --panel:#FFFFFF; --ink:#1A1917; --muted:#77736A; --line:#E7E3D9;
+  --pos:#14794E; --pos-soft:#E9F3ED; --neg:#C23A2B; --neg-soft:#FAEBE7;
+  --grotesk:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'Space Mono',monospace;
 }
-.gradio-container, .gradio-container * { font-family: 'Segoe UI', Inter, system-ui, -apple-system, sans-serif !important; }
-.gradio-container {
-  max-width: 1000px !important; margin: 0 auto !important;
-  background: radial-gradient(1100px 600px at 50% -10%, #1a1140 0%, var(--bg) 55%) !important;
-  color: var(--txt) !important;
+.gradio-container, .gradio-container.dark {
+  max-width:960px !important; margin:0 auto !important; color-scheme:light;
+  background:var(--paper) !important; color:var(--ink) !important; font-family:var(--body) !important;
+  /* Gradio tema degiskenlerini aydinliga zorla (dark modu ez) */
+  --body-background-fill:var(--paper); --background-fill-primary:var(--paper);
+  --background-fill-secondary:var(--paper); --block-background-fill:var(--panel);
+  --block-label-background-fill:var(--panel); --block-border-color:var(--line);
+  --border-color-primary:var(--line); --border-color-accent:var(--line);
+  --input-background-fill:#FCFBF9; --input-background-fill-focus:#FCFBF9;
+  --input-border-color:var(--line); --input-border-color-focus:var(--ink);
+  --button-secondary-background-fill:transparent; --button-secondary-background-fill-hover:transparent;
+  --button-secondary-text-color:var(--muted); --button-secondary-border-color:var(--line);
+  --block-label-text-color:var(--muted); --body-text-color:var(--ink);
+  --block-info-text-color:var(--muted);
 }
-footer { display: none !important; }
+.gradio-container * { font-family:var(--body); }
+footer { display:none !important; }
+.gr-group,.gr-form,.block,.gr-box,.gr-panel { background:transparent !important; border:none !important; box-shadow:none !important; }
 
-/* Hero */
-#hero { text-align: center; padding: 34px 10px 8px; }
-#hero .kicker {
-  display:inline-block; font-size:12px; letter-spacing:.18em; font-weight:600;
-  color:var(--accent2); background:rgba(124,92,255,.12); border:1px solid rgba(124,92,255,.3);
-  padding:6px 14px; border-radius:999px; margin-bottom:18px; text-transform:uppercase;
-}
-#hero h1 {
-  font-size: 46px; font-weight: 800; line-height:1.12; margin:0 0 14px;
-  color:#f4f0ff; letter-spacing:-.5px; text-shadow:0 2px 40px rgba(124,92,255,.35);
-}
-#hero h1 .grad { color: var(--accent2); }
-#hero p { color: var(--muted); font-size:16px; max-width:560px; margin:0 auto; line-height:1.6; }
+/* Masthead / hero */
+#hero { padding:46px 4px 10px; }
+#hero .kicker { font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+#hero h1 { font-family:var(--grotesk); font-weight:700; font-size:52px; line-height:1.02;
+  letter-spacing:-.02em; color:var(--ink); margin:14px 0 16px; }
+#hero .lead { font-size:17px; line-height:1.65; color:var(--muted); max-width:600px; }
+#hero .lead b { color:var(--ink); font-weight:600; }
 
-/* Panels / cards (Gradio bloklarını sadeleştir) */
-.gr-group, .gr-form, .block, .gr-box { background: transparent !important; border: none !important; box-shadow:none !important; }
-#input-card {
-  background: var(--card) !important; border:1px solid var(--stroke) !important;
-  border-radius: 20px !important; padding: 20px !important; backdrop-filter: blur(14px);
-  box-shadow: 0 20px 60px rgba(0,0,0,.45);
-}
-textarea {
-  background: rgba(0,0,0,.25) !important; color: var(--txt) !important;
-  border:1px solid var(--stroke) !important; border-radius:14px !important;
-  font-size:16px !important; padding:14px !important;
-}
-textarea:focus { border-color: var(--accent) !important; box-shadow:0 0 0 3px rgba(124,92,255,.25) !important; }
-label span { color: var(--muted) !important; font-weight:600 !important; }
+/* Input */
+#input-card { background:var(--panel) !important; border:1px solid var(--line) !important;
+  border-radius:14px !important; padding:20px !important; }
+label span { color:var(--muted) !important; font-family:var(--mono) !important; font-size:12px !important;
+  letter-spacing:.06em !important; text-transform:uppercase !important; font-weight:400 !important; }
+textarea { background:#FCFBF9 !important; color:var(--ink) !important; border:1px solid var(--line) !important;
+  border-radius:10px !important; font-size:16px !important; font-family:var(--body) !important; padding:14px !important; }
+textarea:focus { border-color:var(--ink) !important; box-shadow:none !important; }
+#go { background:var(--ink) !important; color:#FBFAF6 !important; border:none !important; border-radius:10px !important;
+  font-family:var(--grotesk) !important; font-weight:600 !important; font-size:15px !important; padding:12px 22px !important;
+  transition:opacity .15s ease; }
+#go:hover { opacity:.86; }
+#clear { background:transparent !important; color:var(--muted) !important; border:1px solid var(--line) !important;
+  border-radius:10px !important; font-weight:500 !important; }
 
-/* Buttons */
-button.primary, #go {
-  background: linear-gradient(100deg, var(--accent), var(--accent2)) !important;
-  border:none !important; color:#fff !important; font-weight:700 !important;
-  border-radius:14px !important; padding:12px 20px !important; font-size:15px !important;
-  box-shadow: 0 8px 24px rgba(124,92,255,.4); transition: transform .12s ease, box-shadow .12s ease;
-}
-#go:hover { transform: translateY(-2px); box-shadow:0 12px 32px rgba(124,92,255,.55) !important; }
-#clear { background: rgba(255,255,255,.06) !important; color: var(--muted) !important;
-  border:1px solid var(--stroke) !important; border-radius:14px !important; font-weight:600 !important; }
+/* Verdict bar (signature: disagreement = the thesis) */
+.verdictbar { font-family:var(--mono); font-size:13px; letter-spacing:.02em; padding:12px 16px; border-radius:10px;
+  margin:20px 0 4px; display:flex; align-items:center; gap:10px; animation:rise .5s ease both; }
+.verdictbar::before { content:""; width:9px; height:9px; border-radius:50%; }
+.verdictbar.agree { background:var(--pos-soft); color:var(--pos); }
+.verdictbar.agree::before { background:var(--pos); }
+.verdictbar.clash { background:#FBF3E4; color:#8A5B12; }
+.verdictbar.clash::before { background:#C8891F; }
 
-/* Result cards */
-.card {
-  background: var(--card); border:1px solid var(--stroke); border-radius:20px;
-  padding:22px; backdrop-filter: blur(14px); position:relative; overflow:hidden;
-  box-shadow: 0 16px 44px rgba(0,0,0,.4); min-height:172px;
-}
-.card::before { content:""; position:absolute; inset:0 0 auto 0; height:3px; opacity:.9; }
-.card.pos::before { background: linear-gradient(90deg,var(--pos),var(--pos2)); }
-.card.neg::before { background: linear-gradient(90deg,var(--neg),var(--neg2)); }
-.card.empty::before { background: var(--stroke); }
-.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-.card .model { font-weight:700; font-size:16px; color:var(--txt); }
-.tag { font-size:10px; letter-spacing:.12em; font-weight:700; padding:4px 10px; border-radius:999px; }
-.tag.primary { color:#c9b8ff; background:rgba(124,92,255,.18); border:1px solid rgba(124,92,255,.4); }
-.tag.muted { color:var(--muted); background:rgba(255,255,255,.05); border:1px solid var(--stroke); }
-.verdict { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-.verdict .emoji { font-size:38px; line-height:1; }
-.verdict .label { font-size:30px; font-weight:800; }
-.card.pos .label { color:var(--pos2); }
-.card.neg .label { color:var(--neg2); }
-.verdict.placeholder .label { color:var(--muted); font-weight:600; font-size:22px; }
-.bar { height:10px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
-.fill { height:100%; border-radius:999px; transition: width .7s cubic-bezier(.22,1,.36,1); }
-.card.pos .fill { background: linear-gradient(90deg,var(--pos),var(--pos2)); }
-.card.neg .fill { background: linear-gradient(90deg,var(--neg),var(--neg2)); }
-.card.empty .fill { background: var(--stroke); }
-.pct { margin-top:10px; font-size:22px; font-weight:800; color:var(--txt); }
-.pct span { font-size:13px; font-weight:500; color:var(--muted); }
+/* Verdict cards */
+.verdict { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 26px 24px; height:100%; }
+.verdict header { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:22px; }
+.verdict .model { font-family:var(--grotesk); font-weight:700; font-size:17px; color:var(--ink); }
+.verdict .star { font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin-left:8px; }
+.verdict .role { font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.verdict .mark { display:inline-block; font-family:var(--grotesk); font-weight:700; font-size:30px;
+  letter-spacing:.01em; padding:7px 18px; border:2.5px solid currentColor; border-radius:9px; transform:rotate(-2deg); }
+.verdict.pos .mark { color:var(--pos); background:var(--pos-soft); }
+.verdict.neg .mark { color:var(--neg); background:var(--neg-soft); }
+.verdict .mark.idle { color:var(--line); transform:none; }
+.verdict .meter { height:6px; background:#EEEBE3; border-radius:99px; margin:22px 0 12px; overflow:hidden; }
+.verdict .meter i { display:block; height:100%; border-radius:99px; transition:width .8s cubic-bezier(.22,1,.36,1); }
+.verdict.pos .meter i { background:var(--pos); }
+.verdict.neg .meter i { background:var(--neg); }
+.verdict.idle .meter i { background:var(--line); }
+.verdict .score { font-family:var(--mono); font-size:12px; color:var(--muted); }
+.verdict .score b { font-size:15px; color:var(--ink); }
 
-/* Examples as chips */
-#examples { margin-top:6px; }
-.gr-samples-table, #examples table { background:transparent !important; border:none !important; }
-#examples button, .gr-sample-textbox {
-  background: rgba(255,255,255,.05) !important; border:1px solid var(--stroke) !important;
-  color: var(--muted) !important; border-radius:999px !important; font-size:13px !important;
-  padding:8px 14px !important; transition: all .15s ease;
-}
-#examples button:hover { border-color: var(--accent) !important; color:#fff !important; background:rgba(124,92,255,.14) !important; }
+/* Examples */
+#examples label span { color:var(--muted) !important; }
+#examples button { background:var(--panel) !important; border:1px solid var(--line) !important; color:var(--muted) !important;
+  border-radius:99px !important; font-size:13px !important; padding:8px 15px !important; transition:all .15s ease; }
+#examples button:hover { border-color:var(--ink) !important; color:var(--ink) !important; }
 
 /* Footer */
-#foot { text-align:center; color:var(--muted); font-size:13px; padding:22px 10px 30px; }
-#foot a { color:var(--accent2); text-decoration:none; font-weight:600; }
-#foot a:hover { text-decoration:underline; }
-#foot .metrics { margin-bottom:10px; }
-#foot .metrics b { color:var(--txt); }
+#foot { padding:26px 4px 34px; color:var(--muted); font-family:var(--mono); font-size:12px; letter-spacing:.02em; }
+#foot .rule { height:1px; background:var(--line); margin-bottom:16px; }
+#foot a { color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line); }
+#foot a:hover { border-color:var(--ink); }
+#foot b { color:var(--ink); }
+
+@keyframes rise { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { .verdict .meter i, .verdictbar { transition:none; animation:none; } }
 """
 
 HERO = """
 <div id="hero">
-  <span class="kicker">NLP · Duygu Analizi</span>
-  <h1>Türkçe Ürün Yorumu<br><span class="grad">Duygu Analizi</span></h1>
-  <p>Bir ürün yorumu yazın; fine-tune edilmiş <b>BERTurk</b> onu saniyeler içinde
-  sınıflandırsın. Yanında klasik <b>baseline</b>'ı da görün — farkı özellikle
-  olumsuzlama ve bağlam içeren yorumlarda ortaya çıkar.</p>
+  <div class="kicker">BERTurk × Baseline · Duygu Analizi</div>
+  <h1>İki model, tek yorum.</h1>
+  <p class="lead">Fine-tune edilmiş <b>BERTurk</b> ile klasik <b>TF-IDF baseline</b>'ı
+  aynı yoruma bakarken izleyin. Çoğu yorumda aynı kararı verirler; olumsuzlama ve
+  bağlam devreye girince ayrışırlar — bu projenin bütün meselesi o farkta.</p>
 </div>
 """
 
 FOOT = f"""
 <div id="foot">
-  <div class="metrics"><b>BERTurk</b> macro-F1 0.86 &nbsp;·&nbsp; <b>Baseline</b> macro-F1 0.74
-  &nbsp;·&nbsp; 235K yorum, aynı test kümesi</div>
-  <a href="{GITHUB_URL}" target="_blank">⭐ GitHub</a> &nbsp;·&nbsp;
-  <a href="https://huggingface.co/{BERTURK_MODEL_ID}" target="_blank">🤗 Model</a> &nbsp;·&nbsp;
-  <span>Veri: fthbrmnby/turkish_product_reviews</span>
+  <div class="rule"></div>
+  <b>BERTurk</b> macro-F1 0.86 &nbsp; / &nbsp; <b>Baseline</b> macro-F1 0.74 &nbsp; / &nbsp;
+  235K yorum · aynı test kümesi<br><br>
+  <a href="{GITHUB_URL}" target="_blank">GitHub</a> &nbsp;·&nbsp;
+  <a href="https://huggingface.co/{BERTURK_MODEL_ID}" target="_blank">Hugging Face modeli</a> &nbsp;·&nbsp;
+  veri: fthbrmnby/turkish_product_reviews
 </div>
 """
 
-theme = gr.themes.Base(primary_hue="purple", neutral_hue="slate")
+theme = gr.themes.Base(primary_hue="gray", neutral_hue="gray")
 
 with gr.Blocks(css=CSS, theme=theme, title="Türkçe Duygu Analizi") as demo:
     gr.HTML(HERO)
 
     with gr.Group(elem_id="input-card"):
-        inp = gr.Textbox(
-            lines=4, label="Ürün yorumu", show_label=True,
-            placeholder="Örn: Ürün beklentimin çok üzerinde, herkese tavsiye ederim...",
-        )
+        inp = gr.Textbox(lines=4, label="Ürün yorumu",
+                         placeholder="Örn: Kötü diyemem, fiyatına göre gayet iyi.")
         with gr.Row():
-            go = gr.Button("✨ Analiz Et", elem_id="go", scale=3)
+            go = gr.Button("Analiz et", elem_id="go", scale=3)
             clear = gr.Button("Temizle", elem_id="clear", scale=1)
 
-    with gr.Row():
-        out_b = gr.HTML(EMPTY_BERTURK)
-        out_base = gr.HTML(EMPTY_BASELINE)
+    banner = gr.HTML(EMPTY_BANNER)
+    with gr.Row(equal_height=True):
+        out_b = gr.HTML(EMPTY_B)
+        out_base = gr.HTML(EMPTY_BASE)
 
-    gr.Examples(examples=EXAMPLES, inputs=inp, elem_id="examples",
-                label="Hızlı dene:")
+    gr.Examples(examples=EXAMPLES, inputs=inp, elem_id="examples", label="Hızlı dene")
     gr.HTML(FOOT)
 
-    go.click(analyze, inputs=inp, outputs=[out_b, out_base])
-    inp.submit(analyze, inputs=inp, outputs=[out_b, out_base])
-    clear.click(lambda: ("", EMPTY_BERTURK, EMPTY_BASELINE),
-                outputs=[inp, out_b, out_base])
+    go.click(analyze, inputs=inp, outputs=[banner, out_b, out_base])
+    inp.submit(analyze, inputs=inp, outputs=[banner, out_b, out_base])
+    clear.click(lambda: ("", EMPTY_BANNER, EMPTY_B, EMPTY_BASE),
+                outputs=[inp, banner, out_b, out_base])
 
 if __name__ == "__main__":
     demo.launch(theme=theme)
