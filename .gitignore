@@ -14,6 +14,7 @@ data/*
 !data/.gitkeep
 outputs/figures/*
 !outputs/figures/.gitkeep
+outputs/*.log
 
 # Eğitilmiş modeller (yeniden üretilebilir)
 models/*
