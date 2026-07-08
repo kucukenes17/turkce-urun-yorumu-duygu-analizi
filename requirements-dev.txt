@@ -1,0 +1,4 @@
+# Geliştirme/test bağımlılıkları (çalışma zamanı için requirements.txt yeterli)
+-r requirements.txt
+pytest>=8.0
+playwright>=1.40   # scripts/screenshot_demo.py için (playwright install chromium)

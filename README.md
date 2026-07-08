@@ -1,10 +1,13 @@
 <div align="center">
 
-# 🇹🇷 Türkçe Ürün Yorumu Duygu Analizi
+# ◆ Yorumetre
 
-**Türkçe ürün yorumlarını pozitif / negatif sınıflandıran uçtan uca bir NLP projesi**
-_TF-IDF baseline → BERTurk fine-tuning · dürüst değerlendirme · canlı demo_
+**Türkçe ürün yorumu duygu analizi** — TF-IDF baseline → BERTurk fine-tuning,
+dürüst değerlendirme ve iki modeli karşılaştıran canlı demo.
 
+[🇬🇧 English README](README.en.md)
+
+[![tests](https://github.com/kucukenes17/turkce-urun-yorumu-duygu-analizi/actions/workflows/ci.yml/badge.svg)](https://github.com/kucukenes17/turkce-urun-yorumu-duygu-analizi/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-baseline-F7931E?logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
 [![Transformers](https://img.shields.io/badge/🤗%20Transformers-BERTurk-FFD21E)](https://huggingface.co/Eneskck/berturk-turkish-product-sentiment)
@@ -12,6 +15,10 @@ _TF-IDF baseline → BERTurk fine-tuning · dürüst değerlendirme · canlı de
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Macro-F1: `0.74` (baseline) → `0.86` (BERTurk)** &nbsp;·&nbsp; aynı test kümesinde
+
+<img src="docs/images/demo-light.png" width="880" alt="Yorumetre demo arayüzü">
+
+_Aynı yorumda iki modelin ayrıştığı an: BERTurk "Pozitif", baseline "Negatif" — olumsuzlamanın farkı._
 
 </div>
 
@@ -61,6 +68,12 @@ python app.py            # tarayıcı: http://127.0.0.1:7860
 `app.py` + `requirements.txt` kök dizinde olduğu için Hugging Face **Spaces**'e
 doğrudan yüklenebilir. Model Hub'dan otomatik çekilir:
 [`Eneskck/berturk-turkish-product-sentiment`](https://huggingface.co/Eneskck/berturk-turkish-product-sentiment).
+
+Arayüzün aydınlık ve karanlık teması var:
+
+| Aydınlık | Karanlık |
+|:--:|:--:|
+| <img src="docs/images/demo-light.png" width="420"> | <img src="docs/images/demo-dark.png" width="420"> |
 
 ---
 
@@ -142,11 +155,16 @@ src/
   baseline.py          # TF-IDF + Lojistik Regresyon
   error_analysis.py    # baseline hatalarını kategorize eder + örnekler
   evaluate_berturk.py  # BERTurk'ü test kümesinde değerlendirir + confusion matrix
-app.py                 # Gradio demo (BERTurk vs baseline karşılaştırmalı)
+app.py                 # Gradio demo (BERTurk vs baseline; aydınlık/karanlık tema)
 notebooks/
   berturk_finetuning.ipynb   # Colab GPU fine-tuning (+ opsiyonel HF Hub yükleme)
-docs/images/           # README görselleri
-outputs/               # üretilen raporlar (gitignore)
+scripts/
+  screenshot_demo.py   # demonun ekran görüntülerini üretir (Playwright)
+tests/                 # hızlı smoke testleri (pytest)
+docs/images/           # README görselleri (grafikler + demo)
+outputs/               # üretilen raporlar
+MODEL_CARD.md          # HF Hub model kartı
+README.en.md           # İngilizce README
 ```
 
 Tüm bölmeler `random_state=42` ile deterministik; baseline ve BERTurk **birebir

@@ -148,7 +148,9 @@ footer { display:none !important; }
 .gr-group,.gr-form,.block,.gr-box,.gr-panel { background:transparent !important; border:none !important; box-shadow:none !important; }
 
 /* Masthead / hero */
-#hero { padding:46px 4px 10px; }
+#hero { padding:44px 4px 10px; }
+#hero .brand { font-family:var(--grotesk); font-weight:700; font-size:19px; color:var(--ink);
+  letter-spacing:-.01em; margin-bottom:22px; }
 #hero .kicker { font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
 #hero h1 { font-family:var(--grotesk); font-weight:700; font-size:52px; line-height:1.02;
   letter-spacing:-.02em; color:var(--ink); margin:14px 0 16px; }
@@ -225,7 +227,8 @@ textarea:focus { border-color:var(--ink) !important; box-shadow:none !important;
 
 HERO = """
 <div id="hero">
-  <div class="kicker">BERTurk × Baseline · Duygu Analizi</div>
+  <div class="brand">◆ Yorumetre</div>
+  <div class="kicker">BERTurk × Baseline · Türkçe duygu analizi</div>
   <h1>İki model, tek yorum.</h1>
   <p class="lead">Fine-tune edilmiş <b>BERTurk</b> ile klasik <b>TF-IDF baseline</b>'ı
   aynı yoruma bakarken izleyin. Çoğu yorumda aynı kararı verirler; olumsuzlama ve
@@ -248,7 +251,7 @@ theme = gr.themes.Base(primary_hue="gray", neutral_hue="gray")
 
 THEME_TOGGLE = '''<button id="theme-toggle-btn" onclick="const d=document.documentElement.classList.toggle('t-dark'); this.textContent = d ? '☀ Aydınlık' : '☾ Karanlık';">☾ Karanlık</button>'''
 
-with gr.Blocks(css=CSS, theme=theme, fill_width=True, title="Türkçe Duygu Analizi") as demo:
+with gr.Blocks(css=CSS, theme=theme, fill_width=True, title="Yorumetre — Türkçe Duygu Analizi") as demo:
     gr.HTML(THEME_TOGGLE, elem_id="toggle-wrap")
     gr.HTML(HERO)
 
