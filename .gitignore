@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Sanal ortam
+.venv/
+venv/
+env/
+
+# Veri ve çıktılar (yeniden üretilebilir; repoya konmaz)
+data/*
+!data/.gitkeep
+outputs/figures/*
+!outputs/figures/.gitkeep
+
+# Eğitilmiş modeller (yeniden üretilebilir)
+models/
+
+# Hugging Face önbelleği (yerel)
+.cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
