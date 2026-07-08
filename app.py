@@ -55,10 +55,8 @@ def _card(model, role, f1, scores, star=False):
     tag = '<span class="star">★ ana model</span>' if star else ""
     return f"""
 <article class="verdict {pol}">
-  <header>
-    <span class="model">{model}{tag}</span>
-    <span class="role">{role}</span>
-  </header>
+  <div class="model">{model}{tag}</div>
+  <div class="role">{role}</div>
   <div class="mark">{name}</div>
   <div class="meter"><i style="width:{pct}%"></i></div>
   <div class="score"><b>%{pct}</b> güven · macro-F1 {f1}</div>
@@ -69,7 +67,8 @@ def _placeholder(model, role, f1, star=False):
     tag = '<span class="star">★ ana model</span>' if star else ""
     return f"""
 <article class="verdict idle">
-  <header><span class="model">{model}{tag}</span><span class="role">{role}</span></header>
+  <div class="model">{model}{tag}</div>
+  <div class="role">{role}</div>
   <div class="mark idle">—</div>
   <div class="meter"><i style="width:0%"></i></div>
   <div class="score">yorum bekleniyor · macro-F1 {f1}</div>
@@ -118,7 +117,8 @@ CSS = """
   --grotesk:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'Space Mono',monospace;
 }
 .gradio-container, .gradio-container.dark {
-  max-width:960px !important; margin:0 auto !important; color-scheme:light;
+  max-width:1400px !important; width:100% !important; margin:0 auto !important;
+  padding:0 40px !important; color-scheme:light;
   background:var(--paper) !important; color:var(--ink) !important; font-family:var(--body) !important;
   /* Gradio tema degiskenlerini aydinliga zorla (dark modu ez) */
   --body-background-fill:var(--paper); --background-fill-primary:var(--paper);
@@ -170,11 +170,11 @@ textarea:focus { border-color:var(--ink) !important; box-shadow:none !important;
 
 /* Verdict cards */
 .verdict { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:26px 26px 24px; height:100%; }
-.verdict header { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:22px; }
 .verdict .model { font-family:var(--grotesk); font-weight:700; font-size:17px; color:var(--ink); }
 .verdict .star { font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
-  color:var(--muted); margin-left:8px; }
-.verdict .role { font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  color:var(--muted); margin-left:8px; white-space:nowrap; }
+.verdict .role { font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); margin:3px 0 22px; }
 .verdict .mark { display:inline-block; font-family:var(--grotesk); font-weight:700; font-size:30px;
   letter-spacing:.01em; padding:7px 18px; border:2.5px solid currentColor; border-radius:9px; transform:rotate(-2deg); }
 .verdict.pos .mark { color:var(--pos); background:var(--pos-soft); }
@@ -231,19 +231,22 @@ theme = gr.themes.Base(primary_hue="gray", neutral_hue="gray")
 with gr.Blocks(css=CSS, theme=theme, title="Türkçe Duygu Analizi") as demo:
     gr.HTML(HERO)
 
-    with gr.Group(elem_id="input-card"):
-        inp = gr.Textbox(lines=4, label="Ürün yorumu",
-                         placeholder="Örn: Kötü diyemem, fiyatına göre gayet iyi.")
-        with gr.Row():
-            go = gr.Button("Analiz et", elem_id="go", scale=3)
-            clear = gr.Button("Temizle", elem_id="clear", scale=1)
+    with gr.Row(equal_height=False, elem_id="workspace"):
+        with gr.Column(scale=5, min_width=340):
+            with gr.Group(elem_id="input-card"):
+                inp = gr.Textbox(lines=6, label="Ürün yorumu",
+                                 placeholder="Örn: Kötü diyemem, fiyatına göre gayet iyi.")
+                with gr.Row():
+                    go = gr.Button("Analiz et", elem_id="go", scale=3)
+                    clear = gr.Button("Temizle", elem_id="clear", scale=1)
+            gr.Examples(examples=EXAMPLES, inputs=inp, elem_id="examples",
+                        label="Hızlı dene")
+        with gr.Column(scale=7, min_width=420):
+            banner = gr.HTML(EMPTY_BANNER)
+            with gr.Row(equal_height=True):
+                out_b = gr.HTML(EMPTY_B)
+                out_base = gr.HTML(EMPTY_BASE)
 
-    banner = gr.HTML(EMPTY_BANNER)
-    with gr.Row(equal_height=True):
-        out_b = gr.HTML(EMPTY_B)
-        out_base = gr.HTML(EMPTY_BASE)
-
-    gr.Examples(examples=EXAMPLES, inputs=inp, elem_id="examples", label="Hızlı dene")
     gr.HTML(FOOT)
 
     go.click(analyze, inputs=inp, outputs=[banner, out_b, out_base])
